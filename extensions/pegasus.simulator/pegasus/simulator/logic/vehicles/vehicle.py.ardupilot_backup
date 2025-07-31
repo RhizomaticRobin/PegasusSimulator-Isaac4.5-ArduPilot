@@ -18,7 +18,7 @@ import omni.usd
 from isaacsim.core.utils.prims import define_prim, get_prim_at_path
 from omni.usd import get_stage_next_free_path
 from isaacsim.core.api.robots.robot import Robot
-from isaacsim.core.dynamic_control import _dynamic_control
+from omni.isaac.dynamic_control import _dynamic_control
 
 # Extension APIs
 from pegasus.simulator.logic.state import State
@@ -28,29 +28,19 @@ from pegasus.simulator.logic.vehicle_manager import VehicleManager
 
 def get_world_transform_xform(prim: Usd.Prim):
     """
-    Get the local transformation of a prim using USD APIs directly.
-    Compatible with Isaac Sim 4.5.
-    
+    Get the local transformation of a prim using omni.usd.get_world_transform_matrix().
+    See https://docs.omniverse.nvidia.com/kit/docs/omni.usd/latest/omni.usd/omni.usd.get_world_transform_matrix.html
     Args:
         prim (Usd.Prim): The prim to calculate the world transformation.
     Returns:
-        Gf.Rotation: The rotation component of the world transform.
+        A tuple of:
+        - Translation vector.
+        - Rotation quaternion, i.e. 3d vector plus angle.
+        - Scale vector.
     """
-    from pxr import UsdGeom
-    
-    # Get the xformable interface
-    xformable = UsdGeom.Xformable(prim)
-    if not xformable:
-        carb.log_error(f"Prim {prim.GetPath()} is not xformable")
-        return Gf.Rotation()
-    
-    # Compute world transform at default time
-    time = Usd.TimeCode.Default()
-    world_transform = xformable.ComputeLocalToWorldTransform(time)
-    
-    # Extract rotation using Gf.Transform
-    transform = Gf.Transform(world_transform)
-    return transform.GetRotation()
+    world_transform: Gf.Matrix4d = omni.usd.get_world_transform_matrix(prim)
+    rotation: Gf.Rotation = world_transform.ExtractRotation()
+    return rotation
 
 
 class Vehicle(Robot):
